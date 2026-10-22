@@ -577,6 +577,32 @@ straight after `pm enable` can lose the change. `am force-stop com.nvidia.shield
 Android bind the provider at once, but only until the next boot. The SHIELD lists in `examples/` keep
 `tvrecommendations` enabled for this reason.
 
+## The firmware refuses every third-party launcher: install it as an app
+
+Some Chinese-market TCL and FFalcon firmware refuses any APK that declares the HOME category unless TCL signed
+it, whatever the install method (`pm install`, a PackageInstaller session, USB):
+`INSTALL_PARSE_FAILED_INCONSISTENT_CERTIFICATES: disable install launcher app not signature by tcl`.
+The stock home cannot be replaced there. Do not try to get around the signature check.
+
+The same launcher without the HOME category passes that check. Build and install it that way, beside the stock
+home, which stays Home and is not disabled:
+
+```sh
+TV_HOST=192.168.1.50 launcher/install-as-app.sh
+```
+
+It builds with `-PlauncherNoHome`, stages the APK on `/sdcard` (the shell cannot write `/data/local/tmp` on
+these sets), and falls back to a PackageInstaller session when `pm install` is patched to refuse the shell.
+Then:
+
+- Open CleanYourTV from the TV's app list; the Home button still goes to the stock home.
+- `tools/theme.sh` and `tools/theme.sh --add` work as usual (they stage on `/sdcard` too when needed).
+- Make it the screensaver, which on the TCL ak30a5 also fixes the stock setting that points at a clock app
+  that is not installed:
+  `tools/tv.py 'settings put secure screensaver_components com.gathin.tvhome/.ClockDream; settings put secure screensaver_enabled 1'`
+
+Undo with `tools/tv.py 'pm uninstall com.gathin.tvhome'`; nothing else was changed.
+
 ## Fire TV (Fire OS): debloat works, the launcher cannot take Home
 
 Why Google TV differs: on Google TV a third-party app can take the HOME role, so the launcher, the

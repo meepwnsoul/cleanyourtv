@@ -13,6 +13,12 @@ android {
         targetSdk 34
         versionCode 7
         versionName '2.6'
+        // -PlauncherNoHome builds the launcher as an ordinary app, without the HOME category, for firmware that
+        // refuses any third-party launcher at install time (TCL ak30a5: "disable install launcher app not signature
+        // by tcl"). The stock home stays Home; the app opens from the TV's app list and its screensaver works.
+        def noHome = providers.gradleProperty('launcherNoHome').isPresent()
+        manifestPlaceholders = [homeCategory: noHome ? 'android.intent.category.DEFAULT' : 'android.intent.category.HOME']
+        if (noHome) versionNameSuffix '-app'
     }
 
     buildTypes {

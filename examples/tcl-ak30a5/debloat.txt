@@ -28,6 +28,9 @@
 #   with TCL's key: "INSTALL_PARSE_FAILED_INCONSISTENT_CERTIFICATES: disable install launcher app not
 #   signature by tcl". A third-party launcher therefore cannot be installed on this model at all;
 #   com.tcl.cyberui stays and only its ad/telemetry packages (this list) can be removed.
+#   The same launcher WITHOUT the HOME category does install: launcher/install-as-app.sh builds it that way
+#   (-PlauncherNoHome) and installs it as an ordinary app beside cyberui, which stays Home. Open it from the
+#   app list, push themes and desktops to it as usual, and use its screensaver (see docs/TROUBLESHOOTING.md).
 # - 电视卫士 → 应用安装, the only on-screen installer, stages the APK as a file without the .apk
 #   suffix and fails with INSTALL_PARSE_FAILED_NOT_APK ("Failed to parse .../my_app_session") for
 #   every package. Don't use it.

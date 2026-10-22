@@ -58,7 +58,13 @@ RESTART="a=\$(settings get secure enabled_accessibility_services); am force-stop
 # A provider write creates the file as the launcher, and it cannot truncate a file the shell owns either, so
 # remove our copy first. cp stays as the fallback for firmware without the provider.
 URI=content://$PKG.theme
-TMP=/data/local/tmp/cyt-theme
+# Some firmware (TCL ak30a5) does not let the shell write /data/local/tmp: stage on /sdcard there instead.
+STAGE_DIR=/data/local/tmp
+case "$(tv "touch $STAGE_DIR/.cyt-w 2>/dev/null && rm -f $STAGE_DIR/.cyt-w && echo writable" 2>/dev/null | tr -d '\r')" in
+  *writable*) ;;
+  *) STAGE_DIR=/sdcard ;;
+esac
+TMP=$STAGE_DIR/cyt-theme
 # A file's staging path; wallpapers/a.jpg is staged as $TMP-wallpapers-a.jpg.
 stage() { echo "$TMP-${1//\//-}"; }
 # Android 8 and 9 have no `content write`: they print the usage and "[ERROR] Unsupported operation: write" but
