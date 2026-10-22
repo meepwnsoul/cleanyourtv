@@ -2851,6 +2851,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
         if (!launcherSettingsButton) addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
                 new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
+        // Stored desktops (tools/theme.sh --add): one row that opens the picker straight away.
+        if (!Desktops.list(Config.dir(this)).isEmpty()) addSettingsMenuRow(rows, popup, R.string.desktop_switch,
+                () -> startActivityForResult(new Intent(this, LauncherSettingsActivity.class)
+                        .putExtra(LauncherSettingsActivity.EXTRA_DESKTOPS, true), LAUNCHER_SETTINGS_REQUEST));
         if (moduleCards) addSettingsMenuRow(rows, popup, R.string.module_cards, this::showModuleCards);
         if (dockRow) addSettingsMenuRow(rows, popup, R.string.dock_edit, this::startDockEdit);
         addSettingsMenuRow(rows, popup, R.string.reorder, this::toggleReorder);

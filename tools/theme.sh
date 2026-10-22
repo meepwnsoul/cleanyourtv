@@ -5,15 +5,21 @@
 #
 # Usage: TV_HOST=192.168.1.50 tools/theme.sh themes/aurora
 #        TV_HOST=192.168.1.50 tools/theme.sh --reset        # remove the overlay, back to config.xml
+#        TV_HOST=192.168.1.50 tools/theme.sh --add themes/aurora themes/glass ...   # store as desktops
+#        TV_HOST=192.168.1.50 tools/theme.sh --remove glass   # delete a stored desktop
+#        TV_HOST=192.168.1.50 tools/theme.sh --list           # the desktops on the TV
+# Stored desktops are switched on the TV with the remote: Launcher settings > Desktop, or hold OK on
+# Settings > Switch desktop. Adding them never changes the theme that is showing.
 set -euo pipefail
 # Resolve the theme folder against the caller's directory before moving into tools/.
 # Git Bash's pwd says /c/Users/..., which the Windows Python cannot open; pwd -W gives C:/Users/... (as in disable.sh).
 # An absolute argument needs the same: /c/Users/... passed through as typed reached the JSON check below, which
 # could not open it and called the file "not valid JSON". A folder that does not exist keeps the path as typed,
 # so the "no config.json" message names what the caller gave.
+CALLER="$(pwd -W 2>/dev/null || pwd)"
 THEME_ARG="${1:-}"
 case "$THEME_ARG" in
-  --reset|"") ;;
+  --reset|--add|--remove|--list|"") ;;
   /*) THEME_ARG="$(cd "$THEME_ARG" 2>/dev/null && { pwd -W 2>/dev/null || pwd; } || printf '%s' "$THEME_ARG")" ;;
   *) THEME_ARG="$(pwd -W 2>/dev/null || pwd)/$THEME_ARG" ;;
 esac
@@ -57,14 +63,70 @@ TMP=/data/local/tmp/cyt-theme
 stage() { echo "$TMP-${1//\//-}"; }
 # Android 8 and 9 have no `content write`: they print the usage and "[ERROR] Unsupported operation: write" but
 # exit 0, so the exit status alone would skip cp and leave the file deleted. Treat that message as a failure.
-put() { echo "rm -f $DIR/$1 2>/dev/null; { o=\$(content write --uri $URI/$1 < $(stage "$1") 2>&1) && case \"\$o\" in *'Unsupported operation'*) false ;; esac; } || cp $(stage "$1") $DIR/$1 2>/dev/null; rm -f $(stage "$1")"; }
+put() { echo "rm -f $DIR/$1 2>/dev/null; mkdir -p $DIR/$(dirname "$1") 2>/dev/null; { o=\$(content write --uri $URI/$1 < $(stage "$1") 2>&1) && case \"\$o\" in *'Unsupported operation'*) false ;; esac; } || cp $(stage "$1") $DIR/$1 2>/dev/null; rm -f $(stage "$1")"; }
 del() { echo "rm -f $DIR/$1 2>/dev/null; content delete --uri $URI/$1 2>/dev/null"; }
 
 if [ "${1:-}" = --reset ]; then
   tv "mkdir -p $DIR 2>/dev/null; $(del config.json); $(del wallpaper.jpg); printf '%s' '$REVISION' > $TMP-theme_revision; $(put theme_revision); $RESTART; echo reset" | tail -n 1
   exit 0
 fi
-THEME="${THEME_ARG:?usage: theme.sh <theme folder> | --reset}"
+# Desktops: each theme folder goes to desktops/<folder name>/ beside the active theme, which stays as it is.
+# The folder's screenshot.jpg becomes the picker's preview.jpg. Names are letters, digits, - and _ only.
+if [ "${1:-}" = --add ]; then
+  shift
+  [ $# -gt 0 ] || { echo "usage: theme.sh --add <theme folder>..." >&2; exit 1; }
+  for SRC in "$@"; do
+    case "$SRC" in /*) ;; *) SRC="$CALLER/$SRC" ;; esac
+    SRC="${SRC%/}"
+    NAME="$(basename "$SRC")"
+    [[ "$NAME" =~ ^[A-Za-z0-9_-]{1,40}$ ]] || { echo "unsupported desktop name: $NAME (letters, digits, - and _)" >&2; exit 1; }
+    [ -f "$SRC/config.json" ] || { echo "no config.json in $SRC" >&2; exit 1; }
+    "$PY" -I -c 'import json,sys; json.load(open(sys.argv[1]))' "$SRC/config.json" 2>/dev/null \
+      || { echo "$SRC/config.json is not valid JSON" >&2; exit 1; }
+    P="desktops/$NAME"
+    # Start from an empty slot so files a previous version had do not linger.
+    tv "content delete --uri $URI/$P 2>/dev/null; rm -rf $DIR/$P 2>/dev/null; mkdir -p $DIR/$P/wallpapers 2>/dev/null" >/dev/null || true
+    tv --push "$SRC/config.json" "$(stage "$P/config.json")" >/dev/null
+    tv "$(put "$P/config.json")" >/dev/null
+    if [ -f "$SRC/wallpaper.jpg" ]; then
+      "$PY" -I b64push.py "$SRC/wallpaper.jpg" "$(stage "$P/wallpaper.jpg")"
+      tv "$(put "$P/wallpaper.jpg")" >/dev/null
+    fi
+    if [ -f "$SRC/screenshot.jpg" ]; then
+      "$PY" -I b64push.py "$SRC/screenshot.jpg" "$(stage "$P/preview.jpg")"
+      tv "$(put "$P/preview.jpg")" >/dev/null
+    fi
+    if [ -d "$SRC/wallpapers" ]; then
+      for IMAGE in "$SRC"/wallpapers/*; do
+        [ -f "$IMAGE" ] || continue
+        IMG="$(basename "$IMAGE")"
+        case "$IMG" in
+          *.jpg|*.jpeg|*.png|*.webp|*.JPG|*.JPEG|*.PNG|*.WEBP|captions.txt)
+            [[ "$IMG" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "unsupported wallpaper filename: $IMG" >&2; exit 1; }
+            "$PY" -I b64push.py "$IMAGE" "$(stage "$P/wallpapers/$IMG")"
+            tv "$(put "$P/wallpapers/$IMG")" >/dev/null ;;
+        esac
+      done
+    fi
+    echo "Desktop $NAME stored on the TV."
+  done
+  echo "Switch with the remote: Launcher settings > Desktop, or hold OK on Settings > Switch desktop."
+  exit 0
+fi
+if [ "${1:-}" = --remove ]; then
+  shift
+  [ $# -gt 0 ] || { echo "usage: theme.sh --remove <desktop name>..." >&2; exit 1; }
+  for NAME in "$@"; do
+    [[ "$NAME" =~ ^[A-Za-z0-9_-]{1,40}$ ]] || { echo "unsupported desktop name: $NAME" >&2; exit 1; }
+    tv "content delete --uri $URI/desktops/$NAME 2>/dev/null; rm -rf $DIR/desktops/$NAME 2>/dev/null; echo removed $NAME" | tail -n 1
+  done
+  exit 0
+fi
+if [ "${1:-}" = --list ]; then
+  tv "ls $DIR/desktops 2>/dev/null || echo '(no desktops stored)'"
+  exit 0
+fi
+THEME="${THEME_ARG:?usage: theme.sh <theme folder> | --reset | --add <theme folder>... | --remove <name>... | --list}"
 [ -f "$THEME/config.json" ] || { echo "no config.json in $THEME" >&2; exit 1; }
 "$PY" -I -c 'import json,sys; json.load(open(sys.argv[1]))' "$THEME/config.json" 2>/dev/null \
   || { echo "$THEME/config.json is not valid JSON" >&2; exit 1; }

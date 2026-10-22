@@ -24,7 +24,34 @@ final class ThemeFiles {
                 && (collectionImage(segments.get(1)) || WallpaperCaptions.FILE_NAME.equals(segments.get(1)))) {
             return WALLPAPERS + "/" + segments.get(1);
         }
+        // A stored desktop (tools/theme.sh --add): desktops/<name>/config.json, wallpaper.jpg, preview.jpg,
+        // and its own wallpapers/ collection.
+        if (segments.size() >= 3 && Desktops.FOLDER.equals(segments.get(0)) && desktopName(segments.get(1))) {
+            String slot = Desktops.FOLDER + "/" + segments.get(1) + "/";
+            if (segments.size() == 3) {
+                String name = segments.get(2);
+                return Config.FILE_NAME.equals(name) || "wallpaper.jpg".equals(name) || Desktops.PREVIEW.equals(name)
+                        ? slot + name : null;
+            }
+            if (segments.size() == 4 && WALLPAPERS.equals(segments.get(2))
+                    && (collectionImage(segments.get(3)) || WallpaperCaptions.FILE_NAME.equals(segments.get(3)))) {
+                return slot + WALLPAPERS + "/" + segments.get(3);
+            }
+        }
         return null;
+    }
+
+    private static final Pattern DESKTOP = Pattern.compile("[A-Za-z0-9_-]{1,40}");
+
+    /** A desktop's folder name: letters, digits, '-' and '_' only, so it can never climb out of desktops/. */
+    static boolean desktopName(String name) {
+        return name != null && DESKTOP.matcher(name).matches();
+    }
+
+    /** True for "desktops/<name>" alone: a delete of it removes that whole desktop. */
+    static boolean isDesktop(List<String> segments) {
+        return segments != null && segments.size() == 2 && Desktops.FOLDER.equals(segments.get(0))
+                && desktopName(segments.get(1));
     }
 
     /** True for "wallpapers" alone: a delete of it clears the collection's images. */

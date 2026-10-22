@@ -145,4 +145,13 @@
     <!-- Cinematic top shelf (cinematic_home): the line under the focused dock app's name; %1$s is when it was
          last opened, e.g. "5 minutes ago" or "yesterday, 9:40 pm". -->
     <string name="last_opened">Last opened %1$s</string>
+
+    <!-- Stored desktops, pushed with tools/theme.sh add mode -->
+    <string name="desktop_label">Desktop</string>
+    <string name="desktop_state">Desktop: %1$s</string>
+    <string name="desktop_current">%1$s (current)</string>
+    <string name="desktop_other">Other theme</string>
+    <string name="desktop_switch">Switch desktop</string>
+    <string name="desktop_switched">Switched to %1$s</string>
+    <string name="desktop_failed">Could not switch the desktop</string>
 </resources>

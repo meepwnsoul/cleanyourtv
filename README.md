@@ -1,3 +1,9 @@
+> [!NOTE]
+> **This is a fork by [meepwnsoul](https://github.com/meepwnsoul)** of [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv), not the original project.
+> It adds **several desktops on one TV, switched with the remote**: see [Several desktops on one TV](themes/README.md#several-desktops-on-one-tv).
+> 这是 [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) 的分支，新增「多桌面切换」：一台电视存多套桌面，用遥控器切换。
+> Everything else, and the credit for it, belongs to the original project and its contributors.
+
 <p align="center">
   <a href="https://cleanyour.tv"><img src="https://raw.githubusercontent.com/Gathin23/cleanyourtv/main/docs/banner.png" alt="CleanYourTV. Your TV, minus the ads. Strip the bloatware from any Android TV or Google TV over Wi-Fi and replace the ad-filled home screen with a clean launcher that looks like an Apple TV. No root, no cable, nothing uninstalled, and a one-line restore." width="800"></a>
 </p>
@@ -363,6 +369,7 @@ tools/restore.sh examples/xiaomi-mi-tv-4a/debloat.txt        # undo it, stock la
 tools/venv/bin/python -I tools/check.py examples/xiaomi-mi-tv-4a/debloat.txt   # what a firmware update undid
 TV_HOST=192.168.1.50 launcher/build-and-install.sh           # build the launcher and make it Home
 tools/theme.sh themes/aurora                                 # push a theme; --reset removes it
+tools/theme.sh --add themes/aurora themes/glass             # store desktops, switch with the remote
 ```
 
 | Tool | What it does |

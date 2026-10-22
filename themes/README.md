@@ -24,6 +24,27 @@ powershell -ExecutionPolicy Bypass -File tools\theme.ps1 -TvHost 192.168.1.50 th
 Every theme folder has a `screenshot.jpg` of Home with that theme on a real TV. `tools/theme.sh` never
 pushes it; it is only here so you can see a theme before you try it.
 
+## Several desktops on one TV
+
+Push any number of themes as *desktops* and switch between them with the remote, no computer needed
+after that. Adding desktops never changes the theme that is showing.
+
+```bash
+TV_HOST=192.168.1.50 tools/theme.sh --add themes/default themes/aurora themes/glass themes/scenes
+TV_HOST=192.168.1.50 tools/theme.sh --list                 # what is stored on the TV
+TV_HOST=192.168.1.50 tools/theme.sh --remove glass         # delete one
+```
+
+On the TV: **Launcher settings > Desktop**, or hold OK on the Settings button and pick **Switch desktop**.
+The picker shows each theme's `screenshot.jpg` as its preview and marks the one in use. Picking a desktop
+makes it the active theme exactly as `tools/theme.sh <folder>` would: its `config.json`, wallpaper and
+wallpaper collection replace the current ones, and on-TV layout choices go back to the theme's.
+
+Each desktop lives in `Android/data/com.gathin.tvhome/files/desktops/<folder name>/`, so a folder name may
+use letters, digits, `-` and `_` only. With no desktops stored, the Desktop row and the menu entry do not
+appear and nothing else changes. `--add`, `--remove` and `--list` are in `theme.sh` only; Windows users run
+them from Git Bash.
+
 ## Keys
 
 Every key is optional; a missing key keeps the value from `config.xml`, an unknown or wrongly typed key

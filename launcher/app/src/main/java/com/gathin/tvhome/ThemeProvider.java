@@ -50,11 +50,26 @@ public class ThemeProvider extends ContentProvider {
             if (images != null) for (File f : images) if (f.delete()) n++;
             return n;
         }
+        if (dir != null && ThemeFiles.isDesktop(uri.getPathSegments())) {
+            return deleteDesktop(new File(new File(dir, Desktops.FOLDER), uri.getPathSegments().get(1)));
+        }
         try {
             return file(uri).delete() ? 1 : 0;
         } catch (FileNotFoundException e) {
             return 0;
         }
+    }
+
+    /** Removes one stored desktop: its files, its wallpapers/ folder, then the folder itself. Nothing else. */
+    private static int deleteDesktop(File slot) {
+        int n = 0;
+        File[] images = new File(slot, ThemeFiles.WALLPAPERS).listFiles();
+        if (images != null) for (File f : images) if (f.isFile() && f.delete()) n++;
+        new File(slot, ThemeFiles.WALLPAPERS).delete();
+        File[] files = slot.listFiles();
+        if (files != null) for (File f : files) if (f.isFile() && f.delete()) n++;
+        slot.delete();
+        return n;
     }
 
     @Override public boolean onCreate() { return true; }

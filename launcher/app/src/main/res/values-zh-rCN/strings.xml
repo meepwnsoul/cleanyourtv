@@ -63,4 +63,13 @@
         <item quantity="other">%1$d 个应用</item>
     </plurals>
     <string name="greeting_with_name">%1$s，%2$s</string>
+
+    <!-- Stored desktops, pushed with tools/theme.sh add mode -->
+    <string name="desktop_label">桌面</string>
+    <string name="desktop_state">桌面：%1$s</string>
+    <string name="desktop_current">%1$s（当前）</string>
+    <string name="desktop_other">其他主题</string>
+    <string name="desktop_switch">切换桌面</string>
+    <string name="desktop_switched">已切换到 %1$s</string>
+    <string name="desktop_failed">无法切换桌面</string>
 </resources>
