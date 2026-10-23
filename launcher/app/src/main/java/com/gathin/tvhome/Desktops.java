@@ -103,6 +103,16 @@ final class Desktops {
                 if (!target.isDirectory() && !target.mkdirs()) throw new IOException("mkdir " + target);
                 for (File f : images) copy(f, new File(target, f.getName()));
             }
+
+            // The home style's own files (home_style): replaced as a whole, like the collection.
+            File home = new File(themeDir, ThemeFiles.HOME);
+            File[] oldHome = home.listFiles((dir, name) -> ThemeFiles.homeFile(name));
+            if (oldHome != null) for (File f : oldHome) f.delete();
+            File[] homeFiles = new File(d.folder, ThemeFiles.HOME).listFiles((dir, name) -> ThemeFiles.homeFile(name));
+            if (homeFiles != null && homeFiles.length > 0) {
+                if (!home.isDirectory() && !home.mkdirs()) throw new IOException("mkdir " + home);
+                for (File f : homeFiles) copy(f, new File(home, f.getName()));
+            }
             write(new File(themeDir, "theme_revision"), revision.getBytes(StandardCharsets.US_ASCII));
             return true;
         } catch (IOException e) {

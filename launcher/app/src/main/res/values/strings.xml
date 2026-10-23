@@ -154,4 +154,11 @@
     <string name="desktop_switch">Switch desktop</string>
     <string name="desktop_switched">Switched to %1$s</string>
     <string name="desktop_failed">Could not switch the desktop</string>
+
+    <!-- Styled homes (home_style): the bubble desktop and the turntable's display -->
+    <string name="network">Network</string>
+    <string name="press_ok_to_open">Press OK to open</string>
+    <string name="vfd_input">INPUT</string>
+    <string name="vfd_network">NETWORK</string>
+    <string name="vfd_setup">SETUP</string>
 </resources>

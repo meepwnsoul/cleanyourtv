@@ -68,6 +68,19 @@ public class ThemeFilesTest {
         assertFalse(ThemeFiles.isDesktop(Collections.singletonList("desktops")));
     }
 
+    @Test public void homeStyleFilesAreAllowed() {
+        assertEquals("home/scene.jpg", ThemeFiles.path(Arrays.asList("home", "scene.jpg")));
+        assertEquals("home/video.mp4", ThemeFiles.path(Arrays.asList("home", "video.mp4")));
+        assertEquals("desktops/bubbles/home/video.mp4", ThemeFiles.path(Arrays.asList("desktops", "bubbles", "home", "video.mp4")));
+        assertNull(ThemeFiles.path(Arrays.asList("home", "run.sh")));
+        assertNull(ThemeFiles.path(Arrays.asList("home", "..")));
+        assertNull(ThemeFiles.path(Arrays.asList("home", ".mp4")));
+        assertNull(ThemeFiles.path(Arrays.asList("home", "x", "a.jpg")));
+        assertNull(ThemeFiles.path(Arrays.asList("wallpapers", "clip.mp4")));
+        assertTrue(ThemeFiles.isHomeFolder(Collections.singletonList("home")));
+        assertFalse(ThemeFiles.isHomeFolder(Arrays.asList("home", "a.jpg")));
+    }
+
     @Test public void onlyTheBareFolderIsTheCollection() {
         assertTrue(ThemeFiles.isCollection(Collections.singletonList("wallpapers")));
         assertFalse(ThemeFiles.isCollection(Arrays.asList("wallpapers", "dusk.jpg")));

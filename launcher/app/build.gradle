@@ -21,6 +21,18 @@ android {
         if (noHome) versionNameSuffix '-app'
     }
 
+    // One fixed key for this fork, committed on purpose, so the ready-made APKs in dist/ and anyone's own build
+    // install over each other (Android refuses an update signed with a different key). It is a debug key: it
+    // proves nothing about who built an APK, and installing still needs ADB on the TV.
+    signingConfigs {
+        debug {
+            storeFile file('fork-debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
     buildTypes {
         release {
             // R8 strips and optimises the code (AndroidX included): smaller APK, faster start on a slow TV CPU.

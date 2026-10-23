@@ -462,6 +462,18 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         });
     }
 
+    /** Every entry that opens something, in Home's order: what a styled home (StyledHome) shows. */
+    List<Entry> launchable() {
+        List<Entry> out = new ArrayList<>();
+        for (Entry e : items) if (e.kind != Entry.EMPTY) out.add(e);
+        return out;
+    }
+
+    /** Opens an entry the way its tile would. */
+    void open(Entry e) {
+        launch(e);
+    }
+
     /** Opens the tile's activity by explicit component, with no extras: a card can name nothing else. */
     private void launch(Entry e) {
         if (e.kind == Entry.HOME_SETTINGS) {

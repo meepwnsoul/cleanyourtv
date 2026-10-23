@@ -16,6 +16,8 @@ traces/
 
 # Generated install bundles and JVM crash reports stay out of contributions.
 *.apk
+# This fork ships ready-made APKs for install.sh.
+!dist/*.apk
 *.aab
 launcher/hs_err_pid*.log
 launcher/replay_pid*.log

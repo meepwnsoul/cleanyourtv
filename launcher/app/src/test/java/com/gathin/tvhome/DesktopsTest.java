@@ -98,6 +98,18 @@ public class DesktopsTest {
         assertNull(new File(dir, "wallpapers").list());
     }
 
+    @Test public void applyReplacesTheHomeStyleFiles() throws IOException {
+        File dir = tmp.newFolder("theme");
+        put(new File(dir, "home/old.jpg"), "old");
+        put(new File(dir, "desktops/bubbles/config.json"), "{\"home_style\":\"bubbles\"}");
+        put(new File(dir, "desktops/bubbles/home/video.mp4"), "video");
+        assertTrue(Desktops.apply(dir, Desktops.list(dir).get(0), "r"));
+        assertArrayEquals(new String[] {"video.mp4"}, new File(dir, "home").list());
+        put(new File(dir, "desktops/aaa/config.json"), "{}");
+        assertTrue(Desktops.apply(dir, Desktops.list(dir).get(0), "r2"));
+        assertEquals(0, new File(dir, "home").list().length);
+    }
+
     @Test public void previewIsOptional() throws IOException {
         File dir = tmp.newFolder("theme");
         put(new File(dir, "desktops/plain/config.json"), "{}");

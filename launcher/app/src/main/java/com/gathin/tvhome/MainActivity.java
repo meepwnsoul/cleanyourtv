@@ -3,6 +3,7 @@ package com.gathin.tvhome;
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
+import android.util.Log;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -83,6 +84,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -336,6 +339,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             handler.postDelayed(this, MINUTE_MS);
         }
     };
+
+    /** home_style: the turntable or the bubbles drawn instead of the grid; null for the grid. */
+    private StyledHome styled;
+    /** The entries the styled home shows, in its order: index i is what its Host.launch(i) opens. */
+    private List<AppAdapter.Entry> styledEntries = Collections.emptyList();
+    private int styledGeneration;
+    private ExecutorService styledLoader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -691,8 +701,101 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     .removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
                     .build(), vpnCallback);
         }
+        setUpStyledHome(cfg);
         // Not after recreate(): the launch intent survives it and would open the settings again.
         if (savedInstanceState == null && !openLauncherSettingsIfAsked(getIntent())) openInputsIfAsked(getIntent());
+    }
+
+    /**
+     * home_style from the theme: the scene goes over everything else, which stays loaded underneath (the apps, the
+     * menus) but hidden. The top bar is only made invisible, so the Inputs and settings menus can still hang from
+     * where its buttons are. A style whose files are missing gives null, and Home stays the grid.
+     */
+    private void setUpStyledHome(Config cfg) {
+        try {
+            styled = createStyledHome(cfg);
+        } catch (RuntimeException e) {
+            Log.e("tvhome", "home_style could not start, showing the grid", e);
+            styled = null;
+        }
+        if (styled == null) return;
+        styledLoader = Executors.newSingleThreadExecutor();
+        hiddenForStyle = new int[root.getChildCount()];
+        for (int i = 0; i < root.getChildCount(); i++) {
+            View child = root.getChildAt(i);
+            hiddenForStyle[i] = child.getVisibility();
+            child.setVisibility(child.findViewById(R.id.btnSettings) != null ? View.INVISIBLE : View.GONE);
+        }
+        grid.setVisibility(View.GONE);
+        root.addView(styled.view(), new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        styled.view().requestFocus();
+    }
+
+    private StyledHome createStyledHome(Config cfg) {
+        return StyledHome.create(this, cfg, new StyledHome.Host() {
+            @Override public void launch(int index) {
+                if (index >= 0 && index < styledEntries.size()) adapter.open(styledEntries.get(index));
+            }
+            @Override public void inputs() { showInputs(); }
+            @Override public void network() { openNetworkPill(); }
+            // Launcher settings rather than the TV's: it has the desktop picker, and a row for the TV's settings.
+            @Override public void settings() {
+                startActivityForResult(new Intent(MainActivity.this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST);
+            }
+            @Override public void settingsMenu() { showSettingsMenu(); }
+            @Override public void library() { onLibraryRequested(); }
+            @Override public void failed(RuntimeException e) { dropStyledHome(e); }
+        });
+    }
+
+    /** Visibility of root's children before a styled home hid them, to put back if it has to go. */
+    private int[] hiddenForStyle;
+
+    /**
+     * A styled home that throws on this TV is dropped for this run: the grid it hid comes back, so Home stays
+     * usable instead of crashing on every start. The next start tries the style again.
+     */
+    private void dropStyledHome(RuntimeException e) {
+        Log.e("tvhome", "home_style failed, showing the grid", e);
+        handler.post(() -> {
+            if (styled == null) return;
+            View v = styled.view();
+            try {
+                styled.pause();
+            } catch (RuntimeException ignored) {
+                // already broken; it is being removed anyway
+            }
+            styled = null;
+            root.removeView(v);
+            if (styledLoader != null) styledLoader.shutdownNow();
+            styledLoader = null;
+            if (hiddenForStyle != null) {
+                for (int i = 0; i < Math.min(hiddenForStyle.length, root.getChildCount()); i++) {
+                    root.getChildAt(i).setVisibility(hiddenForStyle[i]);
+                }
+            }
+            grid.setVisibility(View.VISIBLE);
+            if (!isFinishing()) {
+                wallpaperPlayer.start();
+                reloadApps(true);
+            }
+        });
+    }
+
+    /** Icons and colours load off the main thread; a newer reload wins over an older one still loading. */
+    private void refreshStyledHome() {
+        if (styled == null || styledLoader == null) return;
+        final List<AppAdapter.Entry> entries = adapter.launchable();
+        final int generation = ++styledGeneration;
+        styledLoader.execute(() -> {
+            final List<StyledHome.App> apps = StyledHome.apps(this, entries);
+            runOnUiThread(() -> {
+                if (generation != styledGeneration || isDestroyed() || styled == null) return;
+                styledEntries = entries;
+                styled.setApps(apps);
+            });
+        });
     }
 
     /**
@@ -756,6 +859,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (openLauncherSettingsIfAsked(intent)) return;
         if (openInputsIfAsked(intent)) return;
         if (intent == null || !intent.hasCategory(Intent.CATEGORY_HOME)) return;
+        if (styled != null) {
+            if (stopped) tileRefresh.onHomeAgain();
+            styled.home();
+            return;
+        }
         grid.scrollToPosition(0);
         lastFocused = 0;
         lastFocusedKey = adapter.getItemCount() > 0 ? adapter.keyAt(0) : null;
@@ -822,7 +930,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         if (showStats) startStats();
         sky.update();
-        wallpaperPlayer.start();
+        if (styled != null) styled.resume();
+        else wallpaperPlayer.start();
         handler.postDelayed(minuteTick, MINUTE_MS);
         if (festive && diya != null) {
             diya.start();
@@ -943,6 +1052,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         cards = moduleCards ? CardFeature.run(() -> Cards.discover(this, hiddenApps,
                 () -> Cards.load(Cards.storeFile(this)), leanback), none) : none;
         adapter.reload(cards.isEmpty() ? none : CardFeature.run(() -> Cards.shown(cards), none), leanback);
+        refreshStyledHome();
         lastFocusedKey = returnKey;
         lastFocused = returnSlot;
         packageSequence = currentPackageSequence(packageSequence);
@@ -982,6 +1092,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onPause() {
         super.onPause();
         root.removeCallbacks(showIdleClock);
+        if (styled != null) styled.pause();
         endReorder();   // Home or another app while reordering keeps the order so far
         wallpaperPlayer.stop();
         stopAmbientAnimation();
@@ -1022,6 +1133,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 || level == TRIM_MEMORY_RUNNING_LOW || level == TRIM_MEMORY_RUNNING_CRITICAL;
         if (!due || started) return;
         adapter.clear();
+        if (styled != null) styled.trim();
         // Detach the adapter too: with Home stopped no layout pass runs, so the tile views (and the bitmaps
         // they hold) would stay attached until Home comes back. setAdapter(null) recycles them now.
         grid.setAdapter(null);
@@ -1046,6 +1158,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         super.onDestroy();
         unregisterReceiver(packageReceiver);
         wallpaperPlayer.close();
+        if (styled != null) styled.pause();
+        if (styledLoader != null) styledLoader.shutdownNow();
         ConnectivityManager cm = getSystemService(ConnectivityManager.class);
         TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
         if (tim != null) tim.unregisterCallback(inputCallback);
@@ -2074,6 +2188,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     private void focusLibrary() {
+        if (styled != null) {
+            libraryFocusPending = false;
+            styled.view().requestFocus();
+            return;
+        }
         cancelPendingFocusScroll();
         int position = adapter.appCount();
         if (!adapter.isLibraryAt(position)) return;
@@ -2121,6 +2240,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     private void focusTile(int position) {
         libraryFocusPending = false;
+        if (styled != null) {
+            styled.view().requestFocus();
+            return;
+        }
         cancelPendingFocusScroll();
         if (adapter.appCount() == 0) {
             if (adapter.isLibraryAt(0)) focusLibrary();

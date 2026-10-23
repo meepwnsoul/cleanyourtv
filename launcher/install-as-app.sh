@@ -18,6 +18,8 @@ PY=$TOOLS/venv/bin/python
 export MSYS_NO_PATHCONV=1
 tv() { "$PY" -I "$TOOLS/tv.py" "$@"; }
 
+# PREBUILT_APK=<file> installs that APK (install.sh passes dist/tvhome-app.apk) instead of building one.
+if [ -z "${PREBUILT_APK:-}" ]; then
 # Same JDK 17 and SDK lookup as build-and-install.sh.
 if [ -z "${JAVA_HOME:-}" ]; then
   JH="$(/usr/libexec/java_home -v 17 2>/dev/null || true)"
@@ -34,8 +36,9 @@ export ANDROID_HOME="${ANDROID_HOME:-/opt/homebrew/share/android-commandlinetool
 export PATH="$JAVA_HOME/bin:$PATH"
 [ -f local.properties ] || echo "sdk.dir=$ANDROID_HOME" > local.properties
 ./gradlew assembleRelease -PlauncherNoHome -q --console=plain
+fi
 
-APK=app/build/outputs/apk/release/app-release.apk
+APK="${PREBUILT_APK:-app/build/outputs/apk/release/app-release.apk}"
 SIZE=$(wc -c < "$APK" | tr -d ' ')
 # Some of these sets do not let the shell write /data/local/tmp; /sdcard always works.
 REMOTE=/sdcard/tvhome-app.apk

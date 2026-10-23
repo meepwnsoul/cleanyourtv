@@ -114,6 +114,19 @@ if [ "${1:-}" = --add ]; then
         esac
       done
     fi
+    if [ -d "$SRC/home" ]; then
+      tv "mkdir -p $DIR/$P/home 2>/dev/null" >/dev/null || true
+      for FILE in "$SRC"/home/*; do
+        [ -f "$FILE" ] || continue
+        HF="$(basename "$FILE")"
+        case "$HF" in
+          *.jpg|*.jpeg|*.png|*.webp|*.mp4|*.JPG|*.JPEG|*.PNG|*.WEBP|*.MP4)
+            [[ "$HF" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "unsupported home filename: $HF" >&2; exit 1; }
+            "$PY" -I b64push.py "$FILE" "$(stage "$P/home/$HF")"
+            tv "$(put "$P/home/$HF")" >/dev/null ;;
+        esac
+      done
+    fi
     echo "Desktop $NAME stored on the TV."
   done
   echo "Switch with the remote: Launcher settings > Desktop, or hold OK on Settings > Switch desktop."
@@ -165,6 +178,21 @@ if [ -f "$THEME/wallpapers/captions.txt" ]; then
   tv "$(put wallpapers/captions.txt)" >/dev/null
 else
   tv "$(del wallpapers/captions.txt)" >/dev/null
+fi
+# A home style's files (home_style: the turntable's artwork, the bubble desktop's video). Large files go
+# through b64push, which checks each one; a theme without home/ leaves none behind.
+tv "mkdir -p $DIR/home 2>/dev/null; rm -f $DIR/home/* 2>/dev/null; content delete --uri $URI/home 2>/dev/null" >/dev/null
+if [ -d "$THEME/home" ]; then
+  for FILE in "$THEME"/home/*; do
+    [ -f "$FILE" ] || continue
+    NAME=$(basename "$FILE")
+    case "$NAME" in
+      *.jpg|*.jpeg|*.png|*.webp|*.mp4|*.JPG|*.JPEG|*.PNG|*.WEBP|*.MP4)
+        [[ "$NAME" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "unsupported home filename: $NAME" >&2; exit 1; }
+        "$PY" -I b64push.py "$FILE" "$(stage "home/$NAME")"
+        tv "$(put "home/$NAME")" >/dev/null ;;
+    esac
+  done
 fi
 tv "printf '%s' '$REVISION' > $TMP-theme_revision; $(put theme_revision)" >/dev/null
 tv "$RESTART; echo applied" | tail -n 1

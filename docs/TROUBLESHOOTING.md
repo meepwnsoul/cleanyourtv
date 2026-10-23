@@ -591,6 +591,9 @@ home, which stays Home and is not disabled:
 TV_HOST=192.168.1.50 launcher/install-as-app.sh
 ```
 
+`./install.sh` at the top of this fork does this by itself when the normal install is refused, using the
+ready-made `dist/tvhome-app.apk`.
+
 It builds with `-PlauncherNoHome`, stages the APK on `/sdcard` (the shell cannot write `/data/local/tmp` on
 these sets), and falls back to a PackageInstaller session when `pm install` is patched to refuse the shell.
 Then:

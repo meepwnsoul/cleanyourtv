@@ -50,6 +50,12 @@ public class ThemeProvider extends ContentProvider {
             if (images != null) for (File f : images) if (f.delete()) n++;
             return n;
         }
+        if (dir != null && ThemeFiles.isHomeFolder(uri.getPathSegments())) {
+            File[] files = new File(dir, ThemeFiles.HOME).listFiles((d, name) -> ThemeFiles.homeFile(name));
+            int n = 0;
+            if (files != null) for (File f : files) if (f.delete()) n++;
+            return n;
+        }
         if (dir != null && ThemeFiles.isDesktop(uri.getPathSegments())) {
             return deleteDesktop(new File(new File(dir, Desktops.FOLDER), uri.getPathSegments().get(1)));
         }
@@ -63,9 +69,11 @@ public class ThemeProvider extends ContentProvider {
     /** Removes one stored desktop: its files, its wallpapers/ folder, then the folder itself. Nothing else. */
     private static int deleteDesktop(File slot) {
         int n = 0;
-        File[] images = new File(slot, ThemeFiles.WALLPAPERS).listFiles();
-        if (images != null) for (File f : images) if (f.isFile() && f.delete()) n++;
-        new File(slot, ThemeFiles.WALLPAPERS).delete();
+        for (String sub : new String[] {ThemeFiles.WALLPAPERS, ThemeFiles.HOME}) {
+            File[] files = new File(slot, sub).listFiles();
+            if (files != null) for (File f : files) if (f.isFile() && f.delete()) n++;
+            new File(slot, sub).delete();
+        }
         File[] files = slot.listFiles();
         if (files != null) for (File f : files) if (f.isFile() && f.delete()) n++;
         slot.delete();

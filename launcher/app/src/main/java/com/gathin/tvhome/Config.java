@@ -445,7 +445,7 @@ final class Config {
         Festival festival = json == null ? Festival.NONE : Festival.parse(string(json, "festival", ""),
                 string(json, "festival_until", ""), string(json, "greeting", ""), string(json, "accent_color", ""));
 
-        return new Config(dock, fillDock, hidden, liveTv, liveTvAction, liveTvInputId, packageMap(launchActions), packageMap(appLabels),
+        Config config = new Config(dock, fillDock, hidden, liveTv, liveTvAction, liveTvInputId, packageMap(launchActions), packageMap(appLabels),
                 packageMap(appBanners), panelService,
                 panelAction, panelExtra, coocaaSources, inputAction, inputUriScheme,
                 Math.max(1, columns), Math.max(0, rowsBelow), animations, advancedEffects,
@@ -454,7 +454,25 @@ final class Config {
                 wallpapers, rotationMinutes, wallpaperDim, dockOpacity, wallpaperOrder, applied,
                 festival, inputKeycodes, appKeys, stockHomeRedirect, json == null ? Collections.emptyList() : raceCalendar(json), cinematic, ambientGlow, appGlow,
                 Math.max(0, idleClockMinutes), keyFilter, dockGlass, glowStyle, wallpaperCaptions, handleViewInputs, tileMenu);
+        // home_style: a whole different Home (turntable, bubbles) drawn from the theme's home/ files; only a theme
+        // turns it on, and StyledHome falls back to the grid when its files are missing.
+        config.homeStyle = json == null ? HOME_GRID : homeStyle(string(json, "home_style", HOME_GRID));
+        config.homeDir = dir == null ? null : new File(dir, ThemeFiles.HOME);
+        return config;
     }
+
+    static final String HOME_GRID = "grid", HOME_TURNTABLE = "turntable", HOME_BUBBLES = "bubbles";
+
+    /** A known home_style, or the grid for anything else. */
+    static String homeStyle(String value) {
+        String v = value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
+        return HOME_TURNTABLE.equals(v) || HOME_BUBBLES.equals(v) ? v : HOME_GRID;
+    }
+
+    /** home_style from the theme: grid (the default), turntable or bubbles. */
+    String homeStyle = HOME_GRID;
+    /** The theme's home/ folder, which holds a home style's artwork and video; null without storage. */
+    File homeDir;
 
     /**
      * {@code "race_calendar": [{"round": 18, "name": "United States Grand Prix", "place": "Austin",

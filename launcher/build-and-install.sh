@@ -19,6 +19,9 @@ if [ -n "$MIN_SDK" ] && [ -n "$TV_SDK" ] && [ "$TV_SDK" -lt "$MIN_SDK" ]; then
   echo "half would need your own build with a lower minSdk (docs/TROUBLESHOOTING.md)." >&2
   exit 1
 fi
+# PREBUILT_APK=<file>: install that APK instead of building one (install.sh passes dist/tvhome.apk), so no JDK or
+# Android SDK is needed. Everything after the build, the Home guard included, runs the same.
+if [ -z "${PREBUILT_APK:-}" ]; then
 # macOS: java_home or Homebrew; Linux: the java on PATH.
 # `/usr/libexec/java_home -v 17` means "17 or newer", so on a Mac whose only JDK is newer it prints
 # that one and exits 0, and the Homebrew fallback below never runs. Gradle 8.9 then stops with
@@ -42,6 +45,7 @@ export ANDROID_HOME="${ANDROID_HOME:-/opt/homebrew/share/android-commandlinetool
 export PATH="$JAVA_HOME/bin:$PATH"
 [ -f local.properties ] || echo "sdk.dir=$ANDROID_HOME" > local.properties
 ./gradlew assembleRelease -q --console=plain
+fi
 # Which app owns Home differs by build (com.google.android.tvlauncher on Android TV,
 # com.google.android.apps.tv.launcherx on newer Google TV), so ask the TV instead of guessing.
 # Only a launcher we recognise is accepted: the answer can also be Android's chooser ("android"),
@@ -87,11 +91,17 @@ echo "Stock launcher: $STOCK_LAUNCHER"
 HOME_QUERY='cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME'
 if [ "$STOCK_LAUNCHER" = none ]; then DISABLE_STOCK="echo stock launcher left alone"
 else DISABLE_STOCK="pm disable-user --user 0 $STOCK_LAUNCHER"; fi
-APK=app/build/outputs/apk/release/app-release.apk
-"$PY" -I ../tools/b64push.py "$APK" /data/local/tmp/tvhome.apk
+APK="${PREBUILT_APK:-app/build/outputs/apk/release/app-release.apk}"
+# Some firmware (TCL ak30a5) does not let the shell write /data/local/tmp: stage on /sdcard there instead.
+STAGE=/data/local/tmp/tvhome.apk
+case "$("$PY" -I ../tools/tv.py 'touch /data/local/tmp/.cyt-w 2>/dev/null && rm -f /data/local/tmp/.cyt-w && echo writable' 2>/dev/null | tr -d '\r')" in
+  *writable*) ;;
+  *) STAGE=/sdcard/tvhome.apk ;;
+esac
+"$PY" -I ../tools/b64push.py "$APK" "$STAGE"
 # Install on its own: in the batch below a failed install (e.g. "not enough space" on a full /data)
 # would not stop the stock launcher from being disabled.
-OUT=$("$PY" -I ../tools/tv.py 'pm install -r /data/local/tmp/tvhome.apk; rm -f /data/local/tmp/tvhome.apk')
+OUT=$("$PY" -I ../tools/tv.py "pm install -r $STAGE; rm -f $STAGE")
 echo "$OUT"
 case "$OUT" in
   *Success*) ;;

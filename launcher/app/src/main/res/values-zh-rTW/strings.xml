@@ -96,4 +96,11 @@
     <string name="desktop_switch">切換桌面</string>
     <string name="desktop_switched">已切換到 %1$s</string>
     <string name="desktop_failed">無法切換桌面</string>
+
+    <!-- Styled homes (home_style): the bubble desktop and the turntable's display -->
+    <string name="network">網路</string>
+    <string name="press_ok_to_open">按確定鍵開啟</string>
+    <string name="vfd_input">訊號源</string>
+    <string name="vfd_network">網路</string>
+    <string name="vfd_setup">設定</string>
 </resources>
