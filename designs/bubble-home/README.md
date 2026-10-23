@@ -2,7 +2,13 @@
 
 给高配电视的视频壁纸桌面。打开 [`bubble-home.html`](bubble-home.html) 体验：方向键在气泡之间按位置就近移动，向下进入左下角的信号源、网络、设置，回车打开。
 
-**视频不在仓库里。** 设计时用的那段视频来源不明，不能随仓库分发。请把一段你有权使用的 16:9 循环视频命名为 `swamp.mp4` 放在 HTML 旁边；也可以再放一张 `poster.jpg` 作为封面。没有视频时背景是黑色，界面照常可用。
+## 视频来源
+
+`swamp.mp4` 和封面 `poster.jpg` 来自 YouTube 视频 "Cat In The Swamp Live Wallpaper 4K"：
+https://www.youtube.com/watch?v=ZXHY-EnWPGw ，画面右下角有 moewalls.com 的录制水印。
+经仓库所有者确认可以公开分发。为了在网页样机里流畅播放，已从 4K AV1 转码为 1600×900 H.264（约 4.6 MB，静音、无损循环），画面没有其他改动。
+
+想换成别的视频，用同样的文件名替换即可。
 
 ## 交互
 
