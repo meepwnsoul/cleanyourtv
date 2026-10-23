@@ -1,3 +1,6 @@
+> [!TIP]
+> **中文用户请看 → [使用指南.md](使用指南.md)**：清理电视广告、安装桌面、多桌面切换，一步一步来。
+
 > [!NOTE]
 > **This is a fork by [meepwnsoul](https://github.com/meepwnsoul)** of [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv), not the original project.
 > It adds **several desktops on one TV, switched with the remote**: see [Several desktops on one TV](themes/README.md#several-desktops-on-one-tv).
