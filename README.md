@@ -1,11 +1,11 @@
 > [!TIP]
-> **中文用户请看 → [使用指南.md](使用指南.md)**：`TV_HOST=电视IP ./install.sh` 一条命令装好唱片机、气泡视频等桌面，再清理广告。
+> **中文用户请看 → [使用指南.md](使用指南.md)**：`TV_HOST=电视IP ./install.sh` 一条命令装好唱片机、气泡视频等桌面，再清理广告。已在真电视上实测可用。
 
 > [!NOTE]
 > **This is a fork by [meepwnsoul](https://github.com/meepwnsoul)** of [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv), not the original project.
 > It adds **several desktops on one TV, switched with the remote**: see [Several desktops on one TV](themes/README.md#several-desktops-on-one-tv).
 > 这是 [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) 的分支，新增「多桌面切换」：一台电视存多套桌面，用遥控器切换。
-> Two new home styles, the turntable and a bubble video desktop ([themes](themes/README.md), [designs](designs/README.md)), ready-made APKs in [dist/](dist/README.md) and a one-command `install.sh`.
+> Two new home styles, the turntable and a bubble video desktop ([themes](themes/README.md), [designs](designs/README.md)), ready-made APKs in [dist/](dist/README.md) and a one-command `install.sh`, tried on a TV by the fork's author.
 > Everything else, and the credit for it, belongs to the original project and its contributors.
 
 <p align="center">
